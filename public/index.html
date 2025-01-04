@@ -1,45 +1,65 @@
-const http     = require("http");
-const express  = require("express");
-const path     = require("path");
-const {Server} = require("socket.io");
-const { Socket } = require("net");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <style>
+        #messageholder p {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
 
+        .sent-message {
+            background-color: #DCF8C6; /* Light green for sent messages */
+            text-align: right;
+            align-self: flex-end;
+        }
 
-const port    = 9000;
+        .received-message {
+            background-color: #E1F5FE; /* Light blue for received messages */
+            text-align: left;
+            align-self: flex-start;
+        }
+    </style>
+</head>
+<body>
+    <h1>Web Server Message Test:</h1>
+    <input type="text" id="inputText" placeholder="Enter message">  
+    <button id="btn">Send</button>
+    <div id="messageholder"></div>
 
+    <script src="/socket.io/socket.io.js"></script> <!-- Socket.IO Library -->
+    <script>
+        const socket = io();
+        const btn = document.getElementById("btn");
 
-const app    = express();
-const server = http.createServer(app);
-const io     = new Server(server);
+        // Function to handle the sending the messages
+        function Handle_send_toServer() {
+            const inputText = document.getElementById("inputText").value;
+            socket.emit('User_message', inputText);
+        }
 
-Handle_send_allClients=(socket,message)=>{io.emit("Server_message",message);console.log("All text send to clients")};
+        // Function to handle messages and display them
+        function Handle_display_messages(message) {
+            const p = document.createElement("p");
+            p.innerText = message;
+            p.className = 'received-message';
+            messageholder.appendChild(p);
+        }
 
+        // Assign the function to btn's onclick event
+        btn.onclick = Handle_send_toServer;
 
-//socket io handleling
-io.on('connection', (socket) => {
-  const  socket_id = socket.id;
-  console.log(`user conntected with id: ${ socket_id}`); 
-  // receiving from clients
-  socket.on("User_message",(message)=>{
-      console.log(`Message recived from "${socket_id}"" is  "${message}"`);
-      //send to all clients 
-      Handle_send_allClients(socket,message);
-  })
-  
+        // Listen for messages from the server
+        socket.on("Server_message",(message) => {
+            console.log(message);
+            Handle_display_messages(message);
+        });
 
-});
-
-
-
-
-
-app.use(express.static (path.resolve("./public")));
-
-app.get("/" , (req ,res)=>{
-  return sendFile('../public/index.js');
-});
-
-
-
-
-server.listen(port , () => {console.log(`sever started at port ${port} !`)})
+    </script>
+</body>
+</html>
